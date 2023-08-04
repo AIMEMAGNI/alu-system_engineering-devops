@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/usr/bin/env bash
 # Check if systemd is fully initialized before proceeding
 while ! systemctl is-system-running; do sleep 1; done
 
