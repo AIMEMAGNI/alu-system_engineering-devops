@@ -1,29 +1,32 @@
 #!/usr/bin/env bash
-# Check if systemd is fully initialized before proceeding
-while ! systemctl is-system-running; do sleep 1; done
-
-# Update package information and install HAProxy
+# comment 
+# inspired from https://stackoverflow.com/questions/22306006/configuration-file-etc-nginx-nginx-conf-test-failed-how-do-i-know-why-this-h
+sudo apt remove --purge nginx nginx-full nginx-common -y
 sudo apt update
-sudo apt install -y haproxy
+sudo apt install nginx -y
+sudo touch /var/www/html/index.html
 
-# Configure HAProxy
-sudo tee /etc/haproxy/haproxy.cfg > /dev/null <<EOL
-frontend http_front
-    bind *:80
-    mode http
-    default_backend http_back
+echo "Holberton School" | sudo tee /var/www/html/index.html
+sudo touch /var/www/html/error404.html
+echo "Ceci n'est pas une page" | sudo tee /var/www/html/error404.html
 
-backend http_back
-    mode http
-    balance roundrobin
-    server web-01 3.80.64.75:80 check
-    server web-02 100.25.213.47:80 check
-EOL
+printf %s 'server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
 
-# Enable HAProxy as a service managed by init system
-sudo tee /etc/default/haproxy > /dev/null <<EOL
-ENABLED=1
-EOL
+        root /var/www/html;
 
-# Restart HAProxy service
-sudo systemctl restart haproxy
+        index index.html;
+        error_page 404 /error404.html;
+
+        server_name _;
+        
+        add_header X-Served-By $hostname;
+        
+        location /redirect_me {
+           return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4/;
+        }
+}
+' | sudo tee /etc/nginx/sites-available/default
+
+sudo service nginx restart
